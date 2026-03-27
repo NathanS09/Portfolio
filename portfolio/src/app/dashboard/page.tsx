@@ -14,10 +14,6 @@ export default async function DashboardPage() {
       
       {/* LIGNE 1 - COLONNE 1 : Root-Me */}
       <div className="h-[400px] flex flex-col rounded-xl border border-border/50 bg-card p-6 shadow-sm overflow-hidden">
-        <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 shrink-0 border-b border-border/40 pb-2">
-          <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-          Leaderboard Root-Me SRSI
-        </h3>
         <div className="flex-1 overflow-y-auto pr-2">
           <RootMeWidget />
         </div>
