@@ -36,7 +36,7 @@ export async function getFcscLeaderboard(ids: number[]): Promise<CtfProfile[]> {
         profileUrl: `https://fcsc.fr/users/${id}` 
       });
     } catch (error) {
-      console.error(`Erreur API FCSC pour l'ID ${id}:`, error);
+      console.warn(`Erreur API FCSC pour l'ID ${id}:`, error);
     }
   }
 

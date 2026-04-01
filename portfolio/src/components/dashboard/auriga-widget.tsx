@@ -27,20 +27,6 @@ export default function AurigaWidget() {
     return () => { isMounted = false };
   }, [weekOffset]);
 
-  // L'Injecteur Manuel
-  const handleInjectToken = async () => {
-    const newToken = window.prompt("Mode Admin : Collez le nouveau refresh_token Auriga ici :");
-    if (newToken && newToken.trim() !== "") {
-      setIsLoading(true);
-      await updateAurigaTokenManually(newToken.trim());
-      // On force le rechargement de la semaine en cours
-      const response = await getAurigaSchedule(weekOffset);
-      setCourses(response.courses);
-      setIsCachedData(response.isCached);
-      setIsLoading(false);
-      alert("Token mis à jour !");
-    }
-  };
 
   const groupedCourses = courses.reduce((acc, course) => {
     if (!acc[course.dateStr]) acc[course.dateStr] = [];
@@ -72,14 +58,6 @@ export default function AurigaWidget() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Bouton secret d'injection (⚙️) */}
-          <button 
-            onClick={handleInjectToken}
-            className="text-xs opacity-30 hover:opacity-100 transition-opacity p-1"
-            title="Injecter un nouveau token manuellement"
-          >
-            ⚙️
-          </button>
           <button 
             onClick={() => setWeekOffset(prev => prev + 1)}
             className="text-xs font-mono font-semibold px-3 py-1.5 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground border border-border/50"

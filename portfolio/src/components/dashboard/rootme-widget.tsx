@@ -5,31 +5,37 @@ import { getRootMeLeaderboard } from "@/src/lib/rootme"
 import { getFcscLeaderboard } from "@/src/lib/fcsc"
 import LeaderboardClient from "./leaderboard"
 
-const PROMO_SRSI = [
-  { pseudo: "NathanS09", login: "nathan.sanchez" },
-  { pseudo: "Artemis", login: "mayline.haas", id: 330976},
-  { pseudo: "mant04", login: "antoine.mallet" },
-  { pseudo: "Elioxus", login: "emile.boisard"},
-  { pseudo: "Dalengo", login: "ange.mercoyrol-dol"},
-  { pseudo: "thomasTheLex", login: "thomas.boquet"},
-  { pseudo: "mathieu_morls", login: "mathieu.moralhes"},
-
-]
-
-const FCSC_PLAYERS = [
-  246, // emile
-  234, // nathan
-  289, //antoine
-  254, // mathieu
-
-
-]
-
 export default async function RootMeWidget() {
-  // On lance les deux requêtes API en parallèle pour charger la page 2x plus vite
+  const pbUrl = process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
+  let rootmePlayers = [];
+  let fcscPlayers = [];
+
+  try {
+    const res = await fetch(`${pbUrl}/api/collections/pf_players/records?perPage=50`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const data = await res.json();
+      const allPlayers = data.items || [];
+      
+     rootmePlayers = allPlayers
+        .filter((p: any) => p.platform === 'rootme')
+        .map((p: any) => ({ 
+          pseudo: p.pseudo, 
+          login: p.account_id,
+          // BLINDAGE : On s'assure que c'est bien un nombre valide et non vide
+          id: (p.numeric_id && p.numeric_id !== 0) ? Number(p.numeric_id) : undefined 
+        }));
+
+      console.log(rootmePlayers)
+        
+      fcscPlayers = allPlayers
+        .filter((p: any) => p.platform === 'fcsc')
+        .map((p: any) => parseInt(p.account_id));
+    }
+  } catch(e) { console.error("Erreur chargement joueurs PB"); }
+
   const [rootmeData, fcscData] = await Promise.all([
-    getRootMeLeaderboard(PROMO_SRSI),
-    getFcscLeaderboard(FCSC_PLAYERS)
+    getRootMeLeaderboard(rootmePlayers),
+    getFcscLeaderboard(fcscPlayers)
   ]);
 
   return <LeaderboardClient rootme={rootmeData} fcsc={fcscData} />

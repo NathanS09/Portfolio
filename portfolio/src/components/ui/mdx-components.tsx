@@ -101,5 +101,17 @@ export function getMDXComponents(): MDXComponents {
         {children}
       </td>
     ),
+    // Images responsives
+    img: (props) => (
+      <span className="block my-8 rounded-xl overflow-hidden border border-border/50 bg-muted/20">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img 
+          {...props} 
+          className="w-full h-auto object-cover hover:scale-[1.02] transition-transform duration-300" 
+          loading="lazy" 
+          alt={props.alt || "Image du CTF"}
+        />
+      </span>
+    ),
   }
 }
