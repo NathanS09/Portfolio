@@ -38,7 +38,7 @@ export async function getRootMeLeaderboard(
   for (const student of students) {
     try {
       // 🛡️ LE BOUCLIER ANTI-CLOUDFLARE : Pause de 600ms avant chaque joueur
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 400));
 
       let userId = student.id;
 

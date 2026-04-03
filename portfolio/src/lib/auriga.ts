@@ -29,7 +29,9 @@ let currentRefreshToken: string | null = null;
 // ==========================================
 
 async function getPbAdminToken(): Promise<string> {
-  const pbUrl = process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
+  // ✅ On ajoute PB_INTERNAL_URL en priorité
+  const pbUrl = process.env.PB_INTERNAL_URL || process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
+  
   const authRes = await fetch(`${pbUrl}/api/admins/auth-with-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -40,7 +42,7 @@ async function getPbAdminToken(): Promise<string> {
     cache: 'no-store'
   });
   
-  if (!authRes.ok) throw new Error("Identifiants Admin PocketBase invalides.");
+  if (!authRes.ok) throw new Error("Identifiants Admin PocketBase invalides. in Auriga");
   const authData = await authRes.json();
   return authData.token;
 }

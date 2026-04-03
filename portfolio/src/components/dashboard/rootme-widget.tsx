@@ -26,6 +26,8 @@ export default async function RootMeWidget() {
       fcscPlayers = allPlayers
         .filter((p: any) => p.platform === 'fcsc')
         .map((p: any) => parseInt(p.account_id));
+
+      console.log(`Joueurs récupérées de la bdd.`)
     } else {
       console.error("[Dashboard] PocketBase a refusé la connexion HTTP:", res.status);
     }
