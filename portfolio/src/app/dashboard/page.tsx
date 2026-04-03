@@ -1,7 +1,7 @@
 // src/app/dashboard/page.tsx
 import RootMeWidget from "@/src/components/dashboard/rootme-widget"
 import FeedsWidget from "@/src/components/dashboard/feeds-widget"
-import AurigaWidget from "@/src/components/dashboard/auriga-widget"
+// import AurigaWidget from "@/src/components/dashboard/auriga-widget"
 import { getAnssiAlerts, getGeopoliticsFeed } from "@/src/lib/feeds"
 
 export default async function DashboardPage() {
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
         </h3>
         {/* On enlève l'overflow ici, car c'est le widget lui-même qui gérera ses scrolls */}
         <div className="flex-1 overflow-hidden">
-          <AurigaWidget />
+          {/*<AurigaWidget />*/}
         </div>
       </div>
 
