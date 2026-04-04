@@ -38,7 +38,7 @@ export async function getRootMeLeaderboard(
   for (const student of students) {
     try {
       // 🛡️ LE BOUCLIER ANTI-CLOUDFLARE : Pause de 600ms avant chaque joueur
-      await new Promise(resolve => setTimeout(resolve, 400));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       let userId = student.id;
 
@@ -63,7 +63,7 @@ export async function getRootMeLeaderboard(
       // 2. Récupération des stats avec le BON userId
       const statsRes = await fetch(`https://api.www.root-me.org/auteurs/${userId}`, {
         headers,
-        next: { revalidate: 3600 }
+        next: { revalidate: 300 }
       });
 
       if (!statsRes.ok) throw new Error(`HTTP ${statsRes.status} sur les stats`);

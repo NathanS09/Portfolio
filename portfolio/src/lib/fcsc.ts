@@ -16,7 +16,7 @@ export async function getFcscLeaderboard(ids: number[]): Promise<CtfProfile[]> {
     try {
       // Appel direct à l'API CTFd du FCSC
       const res = await fetch(`https://fcsc.fr/api/v1/users/${id}`, {
-        next: { revalidate: 3600 } // Cache d'une heure pour soulager leurs serveurs
+        next: { revalidate: 300 } // Cache d'une heure pour soulager leurs serveurs
       });
 
       if (!res.ok) continue;
