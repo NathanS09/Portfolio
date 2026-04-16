@@ -4,6 +4,7 @@
 
 import { updateAurigaTokenManually } from "@/src/lib/auriga";
 import { revalidatePath } from "next/cache";
+import { updateEdusignTokenManually } from "@/src/lib/edusign";
 
 // Fonction utilitaire pour récupérer le token PocketBase (comme dans auriga.ts)
 async function getPbAdminToken(): Promise<string> {
@@ -20,6 +21,16 @@ async function getPbAdminToken(): Promise<string> {
   if (!res.ok) throw new Error("Identifiants PB invalides.");
   const data = await res.json();
   return data.token;
+}
+
+export async function updateTokenAction(prevState: any, formData: FormData) {
+  if (formData.get("admin_secret") !== process.env.ADMIN_SECRET) return { error: "Mot de passe incorrect." };
+  try {
+    const token = formData.get("token") as string;
+    await updateEdusignTokenManually(token);
+    revalidatePath('/dashboard');
+    return { success: true, message: "Token EduSign mis à jour !" };
+  } catch (error) { return { error: "Erreur de mise à jour." }; }
 }
 
 export async function createWriteupAction(prevState: any, formData: FormData) {
@@ -116,15 +127,4 @@ export async function addPlayerAction(prevState: any, formData: FormData) {
     revalidatePath('/dashboard');
     return { success: true, message: "Joueur ajouté au Leaderboard !" };
   } catch (error) { return { error: "Erreur serveur." }; }
-}
-
-export async function updateTokenAction(prevState: any, formData: FormData) {
-  if (formData.get("admin_secret") !== process.env.ADMIN_SECRET) return { error: "Mot de passe incorrect." };
-  
-  try {
-    const token = formData.get("token") as string;
-    await updateAurigaTokenManually(token);
-    revalidatePath('/dashboard');
-    return { success: true, message: "Token Auriga mis à jour dans la base !" };
-  } catch (error) { return { error: "Erreur de mise à jour." }; }
 }

@@ -100,8 +100,8 @@ export default function AdminDashboard() {
         <form action={tAction} className="space-y-4 bg-card p-6 rounded-xl border border-border/50">
           <StatusMessage state={tState} />
           <div className="space-y-2">
-            <label className="text-sm font-bold block">Nouveau Refresh Token Auriga</label>
-            <textarea required name="token" rows={4} placeholder="Colle le long refresh_token ici..." className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono" />
+            <label className="text-sm font-bold block">Nouveau Token EduSign (Bearer)</label>
+            <textarea required name="token" rows={4} placeholder="Colle le token EduSign ici..." className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono" />
           </div>
           <SecretInput />
           <Button type="submit" className="w-full font-bold" disabled={tPending}>{tPending ? "Envoi..." : "Mettre à jour le Token"}</Button>

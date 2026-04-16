@@ -1,8 +1,7 @@
-// src/components/dashboard/leaderboard-client.tsx
+// src/components/dashboard/leaderboard.tsx
 "use client"
 
-import { useState } from "react"
-import type { CtfProfile } from "@/src/lib/fcsc"
+import type { CtfProfile } from "@/src/lib/fcsc" // On garde le type !
 
 export default function LeaderboardClient({ 
   rootme, 
@@ -11,36 +10,21 @@ export default function LeaderboardClient({
   rootme: CtfProfile[], 
   fcsc: CtfProfile[] 
 }) {
-  const [activeTab, setActiveTab] = useState<'rootme' | 'fcsc'>('rootme')
-
-  const currentData = activeTab === 'rootme' ? rootme : fcsc;
+  // On force l'affichage de Root-Me, plus besoin de state pour le moment
+  const currentData = rootme;
 
   return (
     <div className="flex flex-col w-full h-full">
       
-      {/* Les Onglets */}
-      <div className="flex gap-4 mb-4 shrink-0 border-b border-border/40 pb-2">
-        <button
-          onClick={() => setActiveTab('rootme')}
-          className={`text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 transition-all -mb-[9px] ${
-            activeTab === 'rootme' ? 'border-green-500 text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${activeTab === 'rootme' ? 'bg-green-500 animate-pulse' : 'bg-muted'}`}></span>
+      {/* En-tête simplifié sans onglets */}
+      <div className="flex mb-4 shrink-0 border-b border-border/40 pb-2">
+        <div className="text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 border-green-500 text-foreground -mb-[9px]">
+          <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
           Root-Me
-        </button>
-        <button
-          onClick={() => setActiveTab('fcsc')}
-          className={`text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 transition-all -mb-[9px] ${
-            activeTab === 'fcsc' ? 'border-blue-500 text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${activeTab === 'fcsc' ? 'bg-blue-500 animate-pulse' : 'bg-muted'}`}></span>
-          FCSC 2026
-        </button>
+        </div>
       </div>
 
-      {/* Le Tableau des Scores */}
+      {/* Le Tableau des Scores (Inchangé) */}
       <div className="flex-1 overflow-y-auto pr-2">
         <table className="w-full text-sm text-left">
           <thead className="text-xs text-muted-foreground uppercase bg-muted/20 border-b border-border/50">
@@ -55,7 +39,6 @@ export default function LeaderboardClient({
               <tr key={student.pseudo} className="border-b border-border/20 hover:bg-muted/10 transition-colors">
                 <td className="px-4 py-3 font-mono font-bold text-muted-foreground">
                   #{index + 1}
-                  {/* Affiche le rang global de la plateforme en petit à côté */}
                   {student.rank > 0 && <span className="text-[10px] ml-2 opacity-50">(Global: #{student.rank})</span>}
                 </td>
                 <td className="px-4 py-3">
@@ -79,7 +62,6 @@ export default function LeaderboardClient({
           </tbody>
         </table>
       </div>
-      
     </div>
   )
 }

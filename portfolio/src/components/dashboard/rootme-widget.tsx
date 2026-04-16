@@ -1,13 +1,12 @@
 // src/components/dashboard/rootme-widget.tsx
 import { getRootMeLeaderboard } from "@/src/lib/rootme"
-import { getFcscLeaderboard } from "@/src/lib/fcsc"
+// import { getFcscLeaderboard } from "@/src/lib/fcsc" // Gardé pour plus tard
 import LeaderboardClient from "./leaderboard"
 
 export default async function RootMeWidget() {
-  // 🛠️ LE CORRECTIF : On cherche l'URL interne en priorité (pour Docker), sinon l'URL externe, sinon localhost
   const pbUrl = process.env.PB_INTERNAL_URL || process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
   let rootmePlayers = [];
-  let fcscPlayers = [];
+  // let fcscPlayers = []; // FCSC ARCHIVÉ
 
   try {
     const res = await fetch(`${pbUrl}/api/collections/pf_players/records?perPage=50`, { next: { revalidate: 60 } });
@@ -23,23 +22,21 @@ export default async function RootMeWidget() {
           id: (p.numeric_id && p.numeric_id !== 0) ? Number(p.numeric_id) : undefined 
         }));
         
+      /* FCSC ARCHIVÉ
       fcscPlayers = allPlayers
         .filter((p: any) => p.platform === 'fcsc')
         .map((p: any) => parseInt(p.account_id));
-
-      console.log(`Joueurs récupérées de la bdd.`)
+      */
     } else {
       console.error("[Dashboard] PocketBase a refusé la connexion HTTP:", res.status);
     }
   } catch(e) { 
-    // Si Hairpin NAT bloque la requête, on le verra clairement dans 'docker logs' !
     console.error("[Dashboard] Erreur réseau critique vers PocketBase :", e); 
   }
 
-  const [rootmeData, fcscData] = await Promise.all([
-    getRootMeLeaderboard(rootmePlayers),
-    getFcscLeaderboard(fcscPlayers)
-  ]);
+  // On lance uniquement Root-Me
+  const rootmeData = await getRootMeLeaderboard(rootmePlayers);
+  // const fcscData = await getFcscLeaderboard(fcscPlayers); // FCSC ARCHIVÉ
 
-  return <LeaderboardClient rootme={rootmeData} fcsc={fcscData} />
+  return <LeaderboardClient rootme={rootmeData} fcsc={[]} />
 }
