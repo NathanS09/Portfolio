@@ -1,16 +1,16 @@
 "use client"
 
 import { useState, useActionState } from "react"
-import { createWriteupAction, createProjectAction, addPlayerAction, updateTokenAction } from "@/src/lib/actions"
+import { createWriteupAction, createProjectAction, addPlayerAction } from "@/src/lib/actions"
 import { Button } from "@/components/ui/button"
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'writeup' | 'project' | 'player' | 'token'>('writeup')
+  // 1. On retire 'token' des types possibles
+  const [activeTab, setActiveTab] = useState<'writeup' | 'project' | 'player'>('writeup')
 
   const [wState, wAction, wPending] = useActionState(createWriteupAction, null)
   const [pState, pAction, pPending] = useActionState(createProjectAction, null)
   const [lState, lAction, lPending] = useActionState(addPlayerAction, null)
-  const [tState, tAction, tPending] = useActionState(updateTokenAction, null)
 
   const SecretInput = () => (
     <div className="space-y-2 bg-destructive/5 p-4 rounded-lg border border-destructive/20 mt-6">
@@ -33,7 +33,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-        {['writeup', 'project', 'player', 'token'].map((tab) => (
+        {/* 2. On retire 'token' de la liste des onglets */}
+        {['writeup', 'project', 'player'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as any)}
@@ -47,7 +48,6 @@ export default function AdminDashboard() {
       {activeTab === 'writeup' && (
         <form action={wAction} className="space-y-4 bg-card p-6 rounded-xl border border-border/50">
           <StatusMessage state={wState} />
-          {/* ... (Remets ici exactement les inputs de ton formulaire Write-up précédent) ... */}
           <div className="grid grid-cols-2 gap-4">
             <input required type="text" name="title" placeholder="Titre" className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
             <input required type="text" name="slug" placeholder="Slug" className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
@@ -93,18 +93,6 @@ export default function AdminDashboard() {
           <input required type="text" name="account_id" placeholder="Login Root-Me (ex: nathan.sanchez) OU ID FCSC (ex: 234)" className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
           <SecretInput />
           <Button type="submit" className="w-full font-bold" disabled={lPending}>{lPending ? "Envoi..." : "Ajouter au Leaderboard"}</Button>
-        </form>
-      )}
-
-      {activeTab === 'token' && (
-        <form action={tAction} className="space-y-4 bg-card p-6 rounded-xl border border-border/50">
-          <StatusMessage state={tState} />
-          <div className="space-y-2">
-            <label className="text-sm font-bold block">Nouveau Token EduSign (Bearer)</label>
-            <textarea required name="token" rows={4} placeholder="Colle le token EduSign ici..." className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-mono" />
-          </div>
-          <SecretInput />
-          <Button type="submit" className="w-full font-bold" disabled={tPending}>{tPending ? "Envoi..." : "Mettre à jour le Token"}</Button>
         </form>
       )}
     </div>
