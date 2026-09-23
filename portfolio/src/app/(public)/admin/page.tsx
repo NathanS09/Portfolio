@@ -2,6 +2,7 @@
 
 import { useState, useActionState } from "react"
 import { createWriteupAction, createProjectAction, addPlayerAction } from "@/src/lib/actions"
+import { logoutAction } from "@/src/lib/auth-actions"
 import { Button } from "@/components/ui/button"
 
 export default function AdminDashboard() {
@@ -12,13 +13,6 @@ export default function AdminDashboard() {
   const [pState, pAction, pPending] = useActionState(createProjectAction, null)
   const [lState, lAction, lPending] = useActionState(addPlayerAction, null)
 
-  const SecretInput = () => (
-    <div className="space-y-2 bg-destructive/5 p-4 rounded-lg border border-destructive/20 mt-6">
-      <label className="text-sm font-bold text-destructive">Clé d'autorisation (Secret)</label>
-      <input required type="password" name="admin_secret" className="w-full bg-background border border-destructive/30 rounded-md px-3 py-2 text-sm" placeholder="Mot de passe requis" />
-    </div>
-  )
-
   const StatusMessage = ({ state }: { state: any }) => (
     <>
       {state?.error && <div className="p-3 mb-4 bg-red-500/10 border border-red-500/50 text-red-500 rounded text-sm font-mono">[ERREUR] {state.error}</div>}
@@ -28,8 +22,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
-      <div className="mb-8 border-b border-border/40 pb-4">
+      <div className="mb-8 border-b border-border/40 pb-4 flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary">Back-Office SRSI</h1>
+        <form action={logoutAction}>
+          <Button type="submit" variant="outline" size="sm">Déconnexion</Button>
+        </form>
       </div>
 
       <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
@@ -60,7 +57,6 @@ export default function AdminDashboard() {
           <textarea required name="description" placeholder="Description" rows={2} className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
           <input required type="text" name="tags" placeholder="Tags (séparés par des virgules)" className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
           <input required type="file" name="content_file" accept=".md,.mdx,.txt" className="w-full text-sm" />
-          <SecretInput />
           <Button type="submit" className="w-full font-bold" disabled={wPending}>{wPending ? "Envoi..." : "Publier"}</Button>
         </form>
       )}
@@ -75,7 +71,6 @@ export default function AdminDashboard() {
             <label className="text-sm font-bold block">Image du projet</label>
             <input required type="file" name="image" accept="image/*" className="w-full text-sm" />
           </div>
-          <SecretInput />
           <Button type="submit" className="w-full font-bold" disabled={pPending}>{pPending ? "Envoi..." : "Ajouter Projet"}</Button>
         </form>
       )}
@@ -91,7 +86,6 @@ export default function AdminDashboard() {
             </select>
           </div>
           <input required type="text" name="account_id" placeholder="Login Root-Me (ex: nathan.sanchez) OU ID FCSC (ex: 234)" className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm" />
-          <SecretInput />
           <Button type="submit" className="w-full font-bold" disabled={lPending}>{lPending ? "Envoi..." : "Ajouter au Leaderboard"}</Button>
         </form>
       )}

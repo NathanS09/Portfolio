@@ -3,14 +3,10 @@
 
 import { revalidatePath } from "next/cache";
 import { pbFetch } from "@/src/lib/pocketbase";
+import { requireSession } from "@/src/lib/auth";
 
 export async function createWriteupAction(prevState: unknown, formData: FormData) {
-  const secret = formData.get("admin_secret");
-  if (secret !== process.env.ADMIN_SECRET) {
-    return { error: "Mot de passe administrateur incorrect." };
-  }
-
-  formData.delete("admin_secret");
+  await requireSession();
 
   const isSolved = formData.get("solved");
   formData.set("solved", isSolved === "on" ? "true" : "false");
@@ -33,8 +29,7 @@ export async function createWriteupAction(prevState: unknown, formData: FormData
 
 
 export async function createProjectAction(prevState: unknown, formData: FormData) {
-  if (formData.get("admin_secret") !== process.env.ADMIN_SECRET) return { error: "Mot de passe incorrect." };
-  formData.delete("admin_secret");
+  await requireSession();
 
   try {
     await pbFetch(`/api/collections/pf_projects/records`, {
@@ -50,8 +45,7 @@ export async function createProjectAction(prevState: unknown, formData: FormData
 }
 
 export async function addPlayerAction(prevState: unknown, formData: FormData) {
-  if (formData.get("admin_secret") !== process.env.ADMIN_SECRET) return { error: "Mot de passe incorrect." };
-  formData.delete("admin_secret");
+  await requireSession();
 
   const data = Object.fromEntries(formData);
 
