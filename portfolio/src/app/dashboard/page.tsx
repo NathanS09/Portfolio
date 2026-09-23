@@ -2,10 +2,12 @@ import RootMeWidget from "@/src/components/dashboard/rootme-widget"
 import FeedsWidget from "@/src/components/dashboard/feeds-widget"
 import EdusignWidget from "@/src/components/dashboard/edusign-widget" // IMPORT EDUSIGN
 import { getAnssiAlerts, getGeopoliticsFeed } from "@/src/lib/feeds"
+import { getEdusignSchedule } from "@/src/lib/edusign"
 
 export default async function DashboardPage() {
   const anssiData = await getAnssiAlerts()
   const geoData = await getGeopoliticsFeed()
+  const { courses, isCached } = await getEdusignSchedule(0)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -23,7 +25,7 @@ export default async function DashboardPage() {
           Planning
         </h3>
         <div className="flex-1 overflow-hidden">
-          <EdusignWidget />
+          <EdusignWidget courses={courses} isCached={isCached} />
         </div>
       </div>
     </div>

@@ -1,9 +1,10 @@
 // src/lib/edusign.ts
-"use server"
+import "server-only";
 
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import { pbFetch } from '@/src/lib/pocketbase';
 
 export interface Course {
   id: string;
@@ -18,44 +19,54 @@ export interface Course {
   isPresent: boolean;
 }
 
+interface EdusignPlanningItem {
+  ID: string;
+  NAME?: string;
+  CLASSROOM?: string;
+  START: string;
+  END: string;
+  STUDENT_PRESENCE?: boolean;
+}
+
 const CACHE_FILE = path.join(os.tmpdir(), 'edusign-cache.json');
+const EDUSIGN_SETTINGS_FILTER = encodeURIComponent("key='edusign_token'");
 
 // ==========================================
-// OUTILS POCKETBASE (Accès Direct Table)
+// OUTILS POCKETBASE (Accès Direct Table, en superuser)
 // ==========================================
 
-export async function updateEdusignTokenManually(newToken: string) {
+async function updateEdusignTokenManually(newToken: string) {
   try {
-    const pbUrl = process.env.PB_INTERNAL_URL || process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
-
-    const recordRes = await fetch(`${pbUrl}/api/collections/pf_settings/records?filter=(key='edusign_token')`, {
-      cache: 'no-store'
-    });
+    const recordRes = await pbFetch(
+      `/api/collections/pf_settings/records?filter=${EDUSIGN_SETTINGS_FILTER}`,
+      { cache: 'no-store' },
+      { admin: true }
+    );
     const recordData = await recordRes.json();
 
     if (recordData.items && recordData.items.length > 0) {
-      await fetch(`${pbUrl}/api/collections/pf_settings/records/${recordData.items[0].id}`, {
+      await pbFetch(`/api/collections/pf_settings/records/${recordData.items[0].id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value: newToken })
-      });
+      }, { admin: true });
     } else {
-      await fetch(`${pbUrl}/api/collections/pf_settings/records`, {
+      await pbFetch(`/api/collections/pf_settings/records`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'edusign_token', value: newToken })
-      });
+      }, { admin: true });
     }
   } catch (e) { console.error("Erreur sauvegarde token EduSign PB:", e); }
-  return { success: true };
 }
 
 async function getEdusignToken(): Promise<string> {
-  const pbUrl = process.env.PB_INTERNAL_URL || process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
-  const recordRes = await fetch(`${pbUrl}/api/collections/pf_settings/records?filter=(key='edusign_token')`, {
-    cache: 'no-store'
-  });
-  
+  const recordRes = await pbFetch(
+    `/api/collections/pf_settings/records?filter=${EDUSIGN_SETTINGS_FILTER}`,
+    { cache: 'no-store' },
+    { admin: true }
+  );
+
   const recordData = await recordRes.json();
   if (recordData.items && recordData.items.length > 0) return recordData.items[0].value;
   return "";
@@ -65,7 +76,9 @@ async function getEdusignToken(): Promise<string> {
 // LOGIN AUTOMATIQUE
 // ==========================================
 
-async function loginToEdusign(): Promise<string> {
+let loginInFlight: Promise<string> | null = null;
+
+async function loginToEdusignOnce(): Promise<string> {
   const email = process.env.EDUSIGN_EMAIL;
   const password = process.env.EDUSIGN_PASSWORD;
 
@@ -83,7 +96,7 @@ async function loginToEdusign(): Promise<string> {
   });
 
   if (!res.ok) throw new Error("Échec login EduSign");
-  
+
   const data = await res.json();
   const newToken = data.result?.TOKEN;
   if (!newToken) throw new Error("Token absent de la réponse login");
@@ -92,17 +105,28 @@ async function loginToEdusign(): Promise<string> {
   return newToken;
 }
 
+// Single-flight : même si 30 requêtes voient un 401 simultanément, une seule
+// requête de login part réellement vers EduSign.
+async function loginToEdusign(): Promise<string> {
+  if (!loginInFlight) {
+    loginInFlight = loginToEdusignOnce().finally(() => {
+      loginInFlight = null;
+    });
+  }
+  return loginInFlight;
+}
+
 // ==========================================
 // PLANNING (SÉCURISÉ CONTRE LA CONCURRENCE)
 // ==========================================
 
 export async function getEdusignSchedule(weekOffset: number = 0): Promise<{ courses: Course[], isCached: boolean }> {
   const today = new Date();
-  const dayOfWeek = today.getDay() || 7; 
+  const dayOfWeek = today.getDay() || 7;
   const monday = new Date(today);
   monday.setDate(today.getDate() - dayOfWeek + 1 + (weekOffset * 7));
   monday.setHours(0, 0, 0, 0);
-  
+
   const friday = new Date(monday);
   friday.setDate(monday.getDate() + 4);
   friday.setHours(23, 59, 59, 999);
@@ -129,13 +153,13 @@ export async function getEdusignSchedule(weekOffset: number = 0): Promise<{ cour
 
     // 🛡️ GESTION DE LA CONCURRENCE (Mode Sniper)
     if (!token || res.status === 401 || res.status === 403) {
-      
+
       // On attend un court instant aléatoire (100-500ms) pour désynchroniser les requêtes
       await new Promise(r => setTimeout(r, Math.random() * 400 + 100));
-      
+
       // On vérifie si un autre utilisateur n'a pas déjà mis à jour le token
       const freshToken = await getEdusignToken();
-      
+
       if (freshToken && freshToken !== token) {
         console.log("[EduSign] Token déjà mis à jour par un autre processus.");
         res = await requestPlanning(freshToken);
@@ -147,11 +171,11 @@ export async function getEdusignSchedule(weekOffset: number = 0): Promise<{ cour
     }
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const data = await res.json();
-    const items = data.result || [];
 
-    const courses: Course[] = items.map((item: any) => {
+    const data = await res.json();
+    const items: EdusignPlanningItem[] = data.result || [];
+
+    const courses: Course[] = items.map((item) => {
       const startDt = new Date(item.START);
       const endDt = new Date(item.END);
 
@@ -196,7 +220,7 @@ export async function getEdusignSchedule(weekOffset: number = 0): Promise<{ cour
       const startTimestamp = monday.getTime();
       const endTimestamp = friday.getTime();
       const weekCourses = allCourses.filter(c => c.rawDate >= startTimestamp && c.rawDate <= endTimestamp);
-      return { courses: weekCourses.sort((a, b) => a.rawDate - b.rawDate), isCached: true }; 
+      return { courses: weekCourses.sort((a, b) => a.rawDate - b.rawDate), isCached: true };
     } catch (e) { return { courses: [], isCached: false }; }
   }
 }
