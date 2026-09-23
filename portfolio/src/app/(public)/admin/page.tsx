@@ -5,20 +5,29 @@ import { createWriteupAction, createProjectAction, addPlayerAction } from "@/src
 import { logoutAction } from "@/src/lib/auth-actions"
 import { Button } from "@/components/ui/button"
 
-export default function AdminDashboard() {
-  // 1. On retire 'token' des types possibles
-  const [activeTab, setActiveTab] = useState<'writeup' | 'project' | 'player'>('writeup')
+interface ActionState {
+  error?: string;
+  success?: boolean;
+  message?: string;
+}
 
-  const [wState, wAction, wPending] = useActionState(createWriteupAction, null)
-  const [pState, pAction, pPending] = useActionState(createProjectAction, null)
-  const [lState, lAction, lPending] = useActionState(addPlayerAction, null)
-
-  const StatusMessage = ({ state }: { state: any }) => (
+function StatusMessage({ state }: { state: ActionState | null }) {
+  return (
     <>
       {state?.error && <div className="p-3 mb-4 bg-red-500/10 border border-red-500/50 text-red-500 rounded text-sm font-mono">[ERREUR] {state.error}</div>}
       {state?.success && <div className="p-3 mb-4 bg-green-500/10 border border-green-500/50 text-green-500 rounded text-sm font-mono">[SUCCÈS] {state.message}</div>}
     </>
   )
+}
+
+type Tab = 'writeup' | 'project' | 'player';
+
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState<Tab>('writeup')
+
+  const [wState, wAction, wPending] = useActionState(createWriteupAction, null)
+  const [pState, pAction, pPending] = useActionState(createProjectAction, null)
+  const [lState, lAction, lPending] = useActionState(addPlayerAction, null)
 
   return (
     <div className="max-w-3xl mx-auto py-12 px-4">
@@ -30,11 +39,10 @@ export default function AdminDashboard() {
       </div>
 
       <div className="flex gap-4 mb-8 overflow-x-auto pb-2">
-        {/* 2. On retire 'token' de la liste des onglets */}
-        {['writeup', 'project', 'player'].map((tab) => (
+        {(['writeup', 'project', 'player'] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-bold rounded-md transition-colors ${activeTab === tab ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
           >
             {tab.toUpperCase()}

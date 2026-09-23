@@ -221,6 +221,6 @@ export async function getEdusignSchedule(weekOffset: number = 0): Promise<{ cour
       const endTimestamp = friday.getTime();
       const weekCourses = allCourses.filter(c => c.rawDate >= startTimestamp && c.rawDate <= endTimestamp);
       return { courses: weekCourses.sort((a, b) => a.rawDate - b.rawDate), isCached: true };
-    } catch (e) { return { courses: [], isCached: false }; }
+    } catch { return { courses: [], isCached: false }; }
   }
 }
