@@ -3,12 +3,11 @@
 
 import type { CtfProfile } from "@/src/lib/fcsc" // On garde le type !
 
-export default function LeaderboardClient({ 
-  rootme, 
-  fcsc 
-}: { 
-  rootme: CtfProfile[], 
-  fcsc: CtfProfile[] 
+export default function LeaderboardClient({
+  rootme,
+}: {
+  rootme: CtfProfile[],
+  fcsc: CtfProfile[]
 }) {
   // On force l'affichage de Root-Me, plus besoin de state pour le moment
   const currentData = rootme;
@@ -55,7 +54,7 @@ export default function LeaderboardClient({
             {currentData.length === 0 && (
               <tr>
                 <td colSpan={3} className="text-center py-8 text-muted-foreground font-mono text-sm">
-                  // Aucun joueur trouvé
+                  {"// Aucun joueur trouvé"}
                 </td>
               </tr>
             )}

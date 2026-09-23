@@ -75,7 +75,7 @@ export function getPostBySlug(slug: string): CTFPostWithContent | null {
   if (!fs.existsSync(filePath)) return null
 
   const fileContent = fs.readFileSync(filePath, 'utf-8')
-  const { data, content } = matter(fileContent)
+  const { content } = matter(fileContent)
 
   return {
     ...parsePostFromFile(`${slug}.mdx`),

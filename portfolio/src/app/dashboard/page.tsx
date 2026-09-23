@@ -1,11 +1,36 @@
+import { unstable_cache } from "next/cache"
 import RootMeWidget from "@/src/components/dashboard/rootme-widget"
 import FeedsWidget from "@/src/components/dashboard/feeds-widget"
 import EdusignWidget from "@/src/components/dashboard/edusign-widget" // IMPORT EDUSIGN
 import { getAnssiAlerts, getGeopoliticsFeed } from "@/src/lib/feeds"
+import { getEdusignSchedule } from "@/src/lib/edusign"
 
-export default async function DashboardPage() {
+const MIN_WEEK_OFFSET = -4
+const MAX_WEEK_OFFSET = 8
+
+const getCachedEdusignSchedule = unstable_cache(
+  async (week: number) => getEdusignSchedule(week),
+  ["edusign-schedule"],
+  { revalidate: 900, tags: ["edusign"] }
+)
+
+function parseWeekOffset(raw: string | undefined): number {
+  const week = Number(raw)
+  if (!Number.isInteger(week) || week < MIN_WEEK_OFFSET || week > MAX_WEEK_OFFSET) return 0
+  return week
+}
+
+interface DashboardPageProps {
+  searchParams: Promise<{ week?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams
+  const week = parseWeekOffset(params.week)
+
   const anssiData = await getAnssiAlerts()
   const geoData = await getGeopoliticsFeed()
+  const { courses, isCached } = await getCachedEdusignSchedule(week)
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -23,7 +48,13 @@ export default async function DashboardPage() {
           Planning
         </h3>
         <div className="flex-1 overflow-hidden">
-          <EdusignWidget />
+          <EdusignWidget
+            courses={courses}
+            isCached={isCached}
+            week={week}
+            minWeek={MIN_WEEK_OFFSET}
+            maxWeek={MAX_WEEK_OFFSET}
+          />
         </div>
       </div>
     </div>

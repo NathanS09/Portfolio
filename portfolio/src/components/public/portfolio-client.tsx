@@ -118,7 +118,7 @@ export default function PortfolioClient({
 
           {projects.length === 0 && (
             <p className="text-muted-foreground font-mono text-sm col-span-2 text-center py-10">
-              // Aucun projet trouvé dans la base de données.
+              {"// Aucun projet trouvé dans la base de données."}
             </p>
           )}
         </div>

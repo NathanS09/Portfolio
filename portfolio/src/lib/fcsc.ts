@@ -1,5 +1,6 @@
 // src/lib/fcsc.ts
-"use server"
+// Archivé : gardé pour le type CtfProfile utilisé par leaderboard.tsx.
+// Pas de "use server" : plus rien ne l'appelle depuis le client.
 
 export interface CtfProfile {
   pseudo: string;

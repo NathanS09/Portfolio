@@ -57,7 +57,7 @@ export default function BlogPage() {
       {/* Liste des articles */}
       {posts.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground font-mono text-sm">
-          <p>// Aucun write-up pour l&apos;instant.</p>
+          <p>{"// Aucun write-up pour l'instant."}</p>
           <p className="mt-1 text-xs opacity-60">Les fichiers MDX apparaîtront ici automatiquement.</p>
         </div>
       ) : (
