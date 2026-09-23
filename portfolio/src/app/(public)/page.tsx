@@ -3,6 +3,7 @@
 // PLUS DE "use client" non plus.
 
 import PortfolioClient from "@/src/components/public/portfolio-client" // On importe le visuel
+import { pbFetch } from "@/src/lib/pocketbase"
 
 interface Project {
   id: string;
@@ -14,14 +15,12 @@ interface Project {
   tags?: string;
 }
 
-// La fonction serveur qui va lire PocketBase
+// La fonction serveur qui va lire PocketBase (routage interne)
 async function getProjects(): Promise<Project[]> {
-  const pbUrl = process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
   try {
-    const res = await fetch(`${pbUrl}/api/collections/pf_projects/records?sort=-created`, {
+    const res = await pbFetch(`/api/collections/pf_projects/records?sort=-created`, {
       next: { revalidate: 60 }
     });
-    if (!res.ok) return [];
     const data = await res.json();
     return data.items;
   } catch (error) {
@@ -32,11 +31,13 @@ async function getProjects(): Promise<Project[]> {
 
 // Le composant de la Page (Serveur)
 export default async function PortfolioPage() {
-  // 1. Le Serveur télécharge les données (ultra rapide car sur le même VPS)
+  // 1. Le Serveur télécharge les données (ultra rapide car sur le même VPS, via l'URL interne)
   const projects = await getProjects();
+  // La prop pbUrl ne sert qu'à construire les URL d'images affichées dans le navigateur :
+  // elle doit rester l'URL publique.
   const pbUrl = process.env.NEXT_PUBLIC_PB_URL || 'http://127.0.0.1:8090';
 
-  // 2. Le Serveur renvoie le code au navigateur du visiteur, 
+  // 2. Le Serveur renvoie le code au navigateur du visiteur,
   // en lui passant les données "prêtes à l'emploi" pour l'animation.
   return <PortfolioClient projects={projects} pbUrl={pbUrl} />
 }
