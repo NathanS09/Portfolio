@@ -1,12 +1,19 @@
 // src/components/dashboard/edusign-widget.tsx
+import Link from "next/link"
 import type { Course } from "@/src/lib/edusign"
 
 interface EdusignWidgetProps {
   courses: Course[];
   isCached: boolean;
+  week: number;
+  minWeek: number;
+  maxWeek: number;
 }
 
-export default function EdusignWidget({ courses, isCached }: EdusignWidgetProps) {
+const navButtonClass = "text-xs font-mono font-semibold px-3 py-1.5 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground border border-border/50"
+const navButtonDisabledClass = "text-xs font-mono font-semibold px-3 py-1.5 rounded text-muted-foreground/40 border border-border/30 cursor-not-allowed"
+
+export default function EdusignWidget({ courses, isCached, week, minWeek, maxWeek }: EdusignWidgetProps) {
   const groupedCourses = courses.reduce((acc, course) => {
     if (!acc[course.dateStr]) acc[course.dateStr] = [];
     acc[course.dateStr].push(course);
@@ -16,12 +23,24 @@ export default function EdusignWidget({ courses, isCached }: EdusignWidgetProps)
   return (
     <div className="flex flex-col h-full w-full relative">
       <div className="flex items-center justify-between mb-4 shrink-0 border-b border-border/40 pb-3 relative">
+        {week > minWeek ? (
+          <Link href={`?week=${week - 1}`} className={navButtonClass}>&lt; SEMAINE PREC.</Link>
+        ) : (
+          <span className={navButtonDisabledClass}>&lt; SEMAINE PREC.</span>
+        )}
+
         <div className="flex flex-col items-center">
           <span className="text-sm font-bold text-foreground tracking-widest text-blue-500">
-            SEMAINE EN COURS
+            {week === 0 ? "SEMAINE EN COURS" : `SEMAINE ${week > 0 ? '+' : ''}${week}`}
           </span>
           {isCached && <span className="text-[10px] bg-red-500/10 text-red-500 font-bold px-2 py-0.5 rounded mt-1">⚠️ MODE HORS-LIGNE</span>}
         </div>
+
+        {week < maxWeek ? (
+          <Link href={`?week=${week + 1}`} className={navButtonClass}>SEMAINE SUIV. &gt;</Link>
+        ) : (
+          <span className={navButtonDisabledClass}>SEMAINE SUIV. &gt;</span>
+        )}
       </div>
 
       <div className="flex gap-6 w-full h-full overflow-x-auto pb-4 snap-x snap-mandatory">
