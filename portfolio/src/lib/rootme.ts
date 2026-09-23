@@ -1,9 +1,12 @@
 // src/lib/rootme.ts
+import "server-only";
+
+import { unstable_cache } from "next/cache";
 
 export interface RootMeStudent {
   pseudo: string;
   login: string;
-  id?: number; 
+  id?: number;
 }
 
 export interface RootMeProfile {
@@ -14,7 +17,13 @@ export interface RootMeProfile {
   profileUrl: string;
 }
 
-export async function getRootMeLeaderboard(
+const REQUEST_DELAY_MS = 1500;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchLeaderboard(
   students: RootMeStudent[]
 ): Promise<RootMeProfile[]> {
   const results: RootMeProfile[] = [];
@@ -30,12 +39,17 @@ export async function getRootMeLeaderboard(
   // On ne met le cookie que si la clé existe dans le .env
   if (process.env.ROOTME_API_KEY) {
     headers["Cookie"] = `api_key=${process.env.ROOTME_API_KEY.trim()}`;
-    console.log(process.env.ROOTME_API_KEY)
   } else {
     console.warn("[Root-Me] ⚠️ Attention: ROOTME_API_KEY est introuvable dans le .env !");
   }
 
-  for (const student of students) {
+  for (let i = 0; i < students.length; i++) {
+    const student = students[i];
+
+    // Délai entre deux joueurs (pas avant le premier) pour rester sous le
+    // radar du WAF Cloudflare de Root-Me.
+    if (i > 0) await delay(REQUEST_DELAY_MS);
+
     try {
 
       let userId = student.id;
@@ -43,12 +57,12 @@ export async function getRootMeLeaderboard(
       // 1. Recherche par pseudo si pas d'ID
       if (!userId || isNaN(userId)) {
         console.log(`[Root-Me] Recherche de ${student.pseudo} via API...`);
-        
+
         const searchRes = await fetch(`https://api.www.root-me.org/auteurs?nom=${encodeURIComponent(student.pseudo)}`, {
           headers,
           next: { revalidate: 3600 }
         });
-        
+
         if (!searchRes.ok) throw new Error(`HTTP ${searchRes.status} sur la recherche`);
         const contentType = searchRes.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) throw new Error("Réponse non-JSON bloquée par un WAF");
@@ -82,11 +96,21 @@ export async function getRootMeLeaderboard(
         score: statsData.score || 0,
         profileUrl: finalUrl
       });
-      
-    } catch (error: any) {
-      console.warn(`[Root-Me] Échec pour ${student.pseudo}. Cause :`, error.cause?.message || error.message || error);
+
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[Root-Me] Échec pour ${student.pseudo}. Cause :`, message);
     }
   }
 
   return results.sort((a, b) => b.score - a.score);
 }
+
+// Le résultat complet est mis en cache 5 minutes : le délai de 1.5s par
+// joueur ne s'applique donc qu'au recalcul périodique, pas à chaque
+// affichage de page.
+export const getRootMeLeaderboard = unstable_cache(
+  fetchLeaderboard,
+  ["rootme-leaderboard"],
+  { revalidate: 300, tags: ["rootme"] }
+);
