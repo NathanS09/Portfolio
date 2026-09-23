@@ -11,45 +11,9 @@ export interface AlertItem {
 
 const parser = new Parser()
 
-export async function getAnssiAlerts(): Promise<AlertItem[]> {
-  const ANSSI_FEED_URL = 'https://www.cert.ssi.gouv.fr/alerte/feed/'
-
+async function fetchRssFeed(url: string, limit: number, fallbackTitle: string): Promise<AlertItem[]> {
   try {
-    const response = await fetch(ANSSI_FEED_URL, {
-      next: { revalidate: 3600 } 
-    })
-
-    if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`)
-
-    const xmlData = await response.text()
-    const feed = await parser.parseString(xmlData)
-
-    // LE CORRECTIF : On trie explicitement par date (du plus récent au plus ancien)
-    const sortedItems = feed.items.sort((a, b) => {
-      const dateA = new Date(a.pubDate || 0).getTime()
-      const dateB = new Date(b.pubDate || 0).getTime()
-      return dateB - dateA
-    })
-
-    return sortedItems.slice(0, 8).map((item) => ({
-      id: item.guid || item.link || Math.random().toString(),
-      title: item.title || 'Alerte inconnue',
-      link: item.link || '#',
-      date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('fr-FR') : 'Date inconnue',
-      summary: item.contentSnippet || '',
-    }))
-
-  } catch (error) {
-    console.error("Erreur lors de la récupération du flux ANSSI :", error)
-    return [] 
-  }
-}
-
-export async function getTheRecordFeed(): Promise<AlertItem[]> {
-  const RECORD_FEED_URL = 'https://therecord.media/feed/'
-
-  try {
-    const response = await fetch(RECORD_FEED_URL, {
+    const response = await fetch(url, {
       next: { revalidate: 3600 }
     })
 
@@ -62,18 +26,30 @@ export async function getTheRecordFeed(): Promise<AlertItem[]> {
       return new Date(b.pubDate || 0).getTime() - new Date(a.pubDate || 0).getTime()
     })
 
-    return sortedItems.slice(0, 8).map((item) => ({
+    return sortedItems.slice(0, limit).map((item) => ({
       id: item.guid || item.link || Math.random().toString(),
-      title: item.title || 'Article inconnu',
+      title: item.title || fallbackTitle,
       link: item.link || '#',
       date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('fr-FR') : 'Date inconnue',
       summary: item.contentSnippet || '',
     }))
 
   } catch (error) {
-    console.error("Erreur lors de la récupération du flux The Record :", error)
+    console.error(`Erreur lors de la récupération du flux ${url} :`, error)
     return []
   }
+}
+
+export function getAnssiAlerts(): Promise<AlertItem[]> {
+  return fetchRssFeed('https://www.cert.ssi.gouv.fr/alerte/feed/', 8, 'Alerte inconnue')
+}
+
+export function getTheRecordFeed(): Promise<AlertItem[]> {
+  return fetchRssFeed('https://therecord.media/feed/', 8, 'Article inconnu')
+}
+
+export function getIcsCertFeed(): Promise<AlertItem[]> {
+  return fetchRssFeed('https://www.cisa.gov/cybersecurity-advisories/ics-advisories.xml', 8, 'Avis ICS inconnu')
 }
 
 export async function getGeopoliticsFeed(): Promise<AlertItem[]> {
@@ -82,7 +58,7 @@ export async function getGeopoliticsFeed(): Promise<AlertItem[]> {
 
   try {
     const response = await fetch(GEO_FEED_URL, {
-      next: { revalidate: 3600 } 
+      next: { revalidate: 3600 }
     })
 
     if (!response.ok) throw new Error(`Erreur HTTP: ${response.status}`)
@@ -110,6 +86,6 @@ export async function getGeopoliticsFeed(): Promise<AlertItem[]> {
 
   } catch (error) {
     console.error("Erreur flux Géopolitique :", error)
-    return [] 
+    return []
   }
 }
