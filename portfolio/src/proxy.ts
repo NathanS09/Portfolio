@@ -13,6 +13,8 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+// /dashboard reste public (choix assumé du propriétaire) : seul /admin
+// (création de contenu / gestion du leaderboard) requiert une session.
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/admin/:path*"],
 };
