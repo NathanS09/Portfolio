@@ -2,7 +2,7 @@ import { unstable_cache } from "next/cache"
 import RootMeWidget from "@/src/components/dashboard/rootme-widget"
 import FeedsWidget from "@/src/components/dashboard/feeds-widget"
 import EdusignWidget from "@/src/components/dashboard/edusign-widget" // IMPORT EDUSIGN
-import { getAnssiAlerts, getGeopoliticsFeed } from "@/src/lib/feeds"
+import { getAnssiAlerts, getGeopoliticsFeed, getTheRecordFeed } from "@/src/lib/feeds"
 import { getEdusignSchedule } from "@/src/lib/edusign"
 
 const MIN_WEEK_OFFSET = -4
@@ -30,6 +30,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const anssiData = await getAnssiAlerts()
   const geoData = await getGeopoliticsFeed()
+  const recordData = await getTheRecordFeed()
   const { courses, isCached } = await getCachedEdusignSchedule(week)
 
   return (
@@ -38,7 +39,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <div className="flex-1 overflow-y-auto pr-2"><RootMeWidget /></div>
       </div>
       <div className="h-[400px] flex flex-col rounded-xl border border-border/50 bg-card p-6 pt-5 shadow-sm overflow-hidden">
-        <FeedsWidget anssi={anssiData} geo={geoData} />
+        <FeedsWidget anssi={anssiData} geo={geoData} record={recordData} />
       </div>
 
       {/* LIGNE 2 - PLEINE LARGEUR : Emploi du temps EDUSIGN */}

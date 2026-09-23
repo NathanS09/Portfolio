@@ -4,39 +4,44 @@
 import { useState } from "react"
 import type { AlertItem } from "@/src/lib/feeds"
 
-export default function FeedsWidget({ 
-  anssi, 
-  geo 
-}: { 
-  anssi: AlertItem[], 
-  geo: AlertItem[] 
+type FeedTab = 'anssi' | 'geo' | 'record'
+
+const TAB_META: Record<FeedTab, { label: string; dot: string; border: string }> = {
+  anssi: { label: 'CERT-FR', dot: 'bg-orange-500', border: 'border-orange-500' },
+  geo: { label: 'GÉOPOLITIQUE', dot: 'bg-purple-500', border: 'border-purple-500' },
+  record: { label: 'THE RECORD', dot: 'bg-blue-500', border: 'border-blue-500' },
+}
+
+export default function FeedsWidget({
+  anssi,
+  geo,
+  record,
+}: {
+  anssi: AlertItem[],
+  geo: AlertItem[],
+  record: AlertItem[],
 }) {
-  const [activeTab, setActiveTab] = useState<'anssi' | 'geo'>('anssi')
-  const currentFeed = activeTab === 'anssi' ? anssi : geo
+  const [activeTab, setActiveTab] = useState<FeedTab>('anssi')
+  const feeds: Record<FeedTab, AlertItem[]> = { anssi, geo, record }
+  const currentFeed = feeds[activeTab]
 
   return (
     <div className="flex flex-col h-full w-full">
-      
+
       {/* Les Onglets */}
       <div className="flex gap-4 mb-4 shrink-0 border-b border-border/40 pb-2">
-        <button
-          onClick={() => setActiveTab('anssi')}
-          className={`text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 transition-all -mb-[9px] ${
-            activeTab === 'anssi' ? 'border-orange-500 text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${activeTab === 'anssi' ? 'bg-orange-500' : 'bg-muted'}`}></span>
-          CERT-FR
-        </button>
-        <button
-          onClick={() => setActiveTab('geo')}
-          className={`text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 transition-all -mb-[9px] ${
-            activeTab === 'geo' ? 'border-purple-500 text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <span className={`h-2 w-2 rounded-full ${activeTab === 'geo' ? 'bg-purple-500' : 'bg-muted'}`}></span>
-          GÉOPOLITIQUE
-        </button>
+        {(Object.keys(TAB_META) as FeedTab[]).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`text-sm font-semibold flex items-center gap-2 pb-2 border-b-2 transition-all -mb-[9px] ${
+              activeTab === tab ? `${TAB_META[tab].border} text-foreground` : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full ${activeTab === tab ? TAB_META[tab].dot : 'bg-muted'}`}></span>
+            {TAB_META[tab].label}
+          </button>
+        ))}
       </div>
 
       {/* La liste des articles */}
@@ -54,6 +59,11 @@ export default function FeedsWidget({
                     <span className="text-purple-400/80 truncate max-w-[65%]" title={item.summary}>{item.summary}</span>
                     <span className="shrink-0">{item.date}</span>
                   </>
+                ) : activeTab === 'record' ? (
+                  <>
+                    <span className="text-blue-400/80 truncate max-w-[65%]" title={item.summary}>{item.summary}</span>
+                    <span className="shrink-0">{item.date}</span>
+                  </>
                 ) : (
                   <>
                     <span>{item.date}</span>
@@ -65,7 +75,7 @@ export default function FeedsWidget({
           ))}
         </ul>
       </div>
-      
+
     </div>
   )
 }
